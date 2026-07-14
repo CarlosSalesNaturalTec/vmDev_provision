@@ -5,7 +5,7 @@
 Este repositório provisiona uma VM descartável do Google Cloud usada como host remoto para agentes de código de IA (Claude Code + OpenSpec + CI/E2E). São dois scripts, não uma aplicação:
 
 - `provision.ps1` — executa na máquina Windows do operador (PowerShell / Google Cloud SDK Shell). Configura o projeto GCP, uma regra de firewall para SSH via IAP, um Cloud Router + Cloud NAT e cria a VM.
-- `startup.sh` — passado para a VM como metadado `startup-script` do GCE (veja `provision.ps1:43`). Executa uma vez como root no primeiro boot para instalar o toolchain (Docker, Node 22, Python, GitHub CLI, tmux, git). Sua saída é gravada em `/var/log/startup-script-progress.log`.
+- `startup.sh` — passado para a VM como metadado `startup-script` do GCE (veja `provision.ps1:43`). Executa uma vez como root no primeiro boot para instalar o toolchain (pacotes base, Docker, Node 22, dependências de SO do Playwright, Python, GitHub CLI, tmux, git). Sua saída é gravada em `/var/log/startup-script-progress.log`.
 
 Os dois arquivos são acoplados: `provision.ps1` injeta `startup.sh` na VM. Alterar o toolchain instalado significa editar `startup.sh`; alterar tamanho/zona/imagem da VM significa editar `provision.ps1`.
 
@@ -17,10 +17,10 @@ Os dois arquivos são acoplados: `provision.ps1` injeta `startup.sh` na VM. Alte
 ./provision.ps1
 
 # Conecte assim que o startup-script terminar (~1-2 min após a criação):
-gcloud compute ssh claude-code-vmDev --zone=us-central1-a --tunnel-through-iap
+gcloud compute ssh claude-code-vm --zone=us-central1-a --tunnel-through-iap
 ```
 
-Não há etapa de build, lint ou teste. A verificação é operacional: execute o `provision.ps1`, depois conecte via SSH e confirme se as ferramentas foram instaladas. Verifique se o startup-script terminou sem erro com `cat /var/log/startup-script-progress.log` — deve terminar na linha `== [6/6] Concluido ==`.
+Não há etapa de build, lint ou teste. A verificação é operacional: execute o `provision.ps1`, depois conecte via SSH e confirme se as ferramentas foram instaladas. Verifique se o startup-script terminou sem erro com `cat /var/log/startup-script-progress.log` — deve terminar na linha `== [7/7] Concluido ==`.
 
 ## Detalhes importantes a preservar ao editar
 
