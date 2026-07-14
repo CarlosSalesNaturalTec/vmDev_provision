@@ -5,9 +5,10 @@
 # Pre-requisito: gcloud auth login ja realizado neste notebook
 # ============================================================
 
-$PROJECT_ID = "seu-projeto-id"          
-$ZONE       = "us-central1-a"
-$VM_NAME    = "claude-code-vm"
+$PROJECT_ID = "seu-projeto-id"          # <-- ajuste aqui
+$ZONE       = "us-central1-a"           
+$REGION     = "us-central1"
+$VM_NAME    = "claude-code-vmDev"
 
 # Define o projeto ativo
 gcloud config set project $PROJECT_ID
@@ -17,6 +18,17 @@ gcloud config set project $PROJECT_ID
 gcloud compute firewall-rules create allow-iap-ssh `
   --direction=INGRESS --action=ALLOW --rules=tcp:22 `
   --source-ranges=35.235.240.0/20 --network=default
+
+# Cloud NAT - OBRIGATORIO porque a VM nao tem IP externo (--no-address).
+# Sem isso, a VM so acessa o mirror interno do Ubuntu - nada de Docker Hub,
+# GitHub, npm, claude.ai etc. (rode so uma vez por projeto/regiao GCP;
+# se ja existir, os comandos abaixo retornam erro "already exists" - pode ignorar)
+gcloud compute routers create nat-router `
+  --network=default --region=$REGION
+
+gcloud compute routers nats create nat-config `
+  --router=nat-router --region=$REGION `
+  --auto-allocate-nat-external-ips --nat-all-subnet-ip-ranges
 
 # Cria a VM - tamanho reduzido para 1-2 projetos simultaneos
 # e2-standard-2 = 2 vCPU / 8GB RAM (suficiente para Claude Code + Playwright + Docker leve)
@@ -34,3 +46,7 @@ Write-Host ""
 Write-Host "VM criada. Aguarde ~1-2 minutos para o startup-script terminar de instalar os pacotes."
 Write-Host "Para conectar:"
 Write-Host "  gcloud compute ssh $VM_NAME --zone=$ZONE --tunnel-through-iap"
+Write-Host ""
+Write-Host "Apos conectar, confira se o script terminou sem erro:"
+Write-Host "  cat /var/log/startup-script-progress.log"
+Write-Host "Deve terminar na linha '== [6/6] Concluido =='"

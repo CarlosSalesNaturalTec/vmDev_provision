@@ -1,26 +1,26 @@
 #!/bin/bash
 set -e
+exec > >(tee /var/log/startup-script-progress.log) 2>&1
 
+echo "== [1/6] Pacotes base =="
 apt-get update -y
 apt-get install -y tmux git curl build-essential ca-certificates gnupg
 
-# Docker
-install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-chmod a+r /etc/apt/keyrings/docker.asc
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" > /etc/apt/sources.list.d/docker.list
-apt-get update -y
-apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+echo "== [2/6] Docker (pacote docker.io do Ubuntu) =="
+apt-get install -y docker.io docker-compose-v2
+systemctl enable --now docker
 
-# Node.js 22 LTS (necessário para OpenSpec CLI, Next.js e Playwright)
+echo "== [3/6] Node.js 22 LTS (OpenSpec CLI, Next.js, Playwright) =="
 curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 apt-get install -y nodejs
 
-# Python (backend FastAPI)
+echo "== [4/6] Python (backend FastAPI) =="
 apt-get install -y python3-pip python3-venv
 
-# GitHub CLI
+echo "== [5/6] GitHub CLI =="
 curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /usr/share/keyrings/githubcli-archive-keyring.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list
 apt-get update -y
 apt-get install -y gh
+
+echo "== [6/6] Concluido =="
