@@ -22,6 +22,37 @@ gcloud compute ssh claude-code-vm --zone=us-central1-a --tunnel-through-iap
 
 Não há etapa de build, lint ou teste. A verificação é operacional: execute o `provision.ps1`, depois conecte via SSH e confirme se as ferramentas foram instaladas. Verifique se o startup-script terminou sem erro com `cat /var/log/startup-script-progress.log` — deve terminar na linha `== [7/7] Concluido ==`.
 
+# Autentique o GitHub CLI uma vez por VM (necessário para clonar repos privados)
+gh auth login
+
+## Preparando um novo repositório na VM
+
+Depois de conectar via SSH, um fluxo típico para clonar um projeto e deixá-lo pronto para rodar (incluindo testes E2E com Playwright) é:
+
+```bash
+# Abra (ou reconecte a) uma sessão tmux, para o trabalho sobreviver a quedas da conexão SSH
+tmux new -s dev        # cria a sessão "dev"
+tmux attach -t dev     # reconecta a uma sessão já existente
+# Ctrl+b d para se desconectar sem encerrar a sessão
+
+tmux ls                # lista as sessões ativas
+tmux kill-session -t dev  # encerra a sessão "dev"
+
+# Clone o repositório
+git clone https://github.com/<org>/<repo>.git
+cd <repo>
+
+# Instale as dependências do projeto
+npm install
+
+# Instale os binários dos navegadores do Playwright (as libs de SO já foram
+# instaladas pelo startup.sh — veja "== [4/7] Dependencias de sistema do Playwright ==")
+npx playwright install chromium firefox webkit
+
+```
+
+Como a VM não tem IP externo, todo esse fluxo (clone, npm install, download dos binários do Playwright) depende do Cloud NAT descrito abaixo — se algum passo travar ou falhar ao resolver DNS/baixar pacotes, confirme que o NAT está configurado.
+
 ## Detalhes importantes a preservar ao editar
 
 - **Sem IP externo** (`--no-address`): a VM é acessível apenas via SSH sobre IAP. A regra de firewall permite `tcp:22` somente a partir da faixa IAP `35.235.240.0/20`. Não adicione um endereço público nem abra outras portas sem motivo.
