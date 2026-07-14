@@ -73,3 +73,33 @@ Como a VM não tem IP externo, todo esse fluxo (clone, npm install, download dos
 - **Identificadores da VM** (`$PROJECT_ID`, `$ZONE`, `$REGION`, `$VM_NAME`) são definidos uma única vez no topo de `provision.ps1` e reutilizados; o comando SSH no `Write-Host` final e qualquer documentação devem coincidir com eles. `$REGION` é usado pelo router/NAT (que são regionais); `$ZONE` pela VM.
 - **`startup.sh` executa como root, de forma não interativa, com `set -e`** — cada etapa do apt deve ser não interativa e tolerante à idempotência em uma imagem Ubuntu 24.04 limpa. A criação da regra de firewall e do router/NAT em `provision.ps1` deve retornar erro "already exists" em novas execuções (são por projeto/região, uma única vez); isso é seguro e pode ser ignorado.
 - Node 22 é exigido pelo OpenSpec CLI, Next.js e Playwright; o venv/pip do Python é para um backend FastAPI. Isso restringe atualizações de versão no `startup.sh`.
+
+## Bloco para colar no CLAUDE.md de cada novo projeto
+
+Toda vez que um novo repositório for clonado e configurado nesta VM (`claude-code-vm`), rode `/init` no Claude Code normalmente para gerar o `CLAUDE.md` daquele projeto — e
+depois cole o bloco abaixo nele (ex.: entre as seções `Commands` e `Architecture`, se o `CLAUDE.md` gerado seguir essa estrutura). Isso mantém o Claude Code ciente do ambiente
+compartilhado sem precisar redescobrir isso a cada sessão, e evita reinstalar algo que já está pronto na VM.
+
+Este bloco é a fonte de verdade — se o toolchain do `startup.sh` mudar (nova versão do Node, novo componente instalado), atualize aqui também, e replique nos `CLAUDE.md` dos
+projetos já existentes.
+
+````markdown
+## Environment (GCP VM)
+
+This repo runs on a dedicated Compute Engine VM (Ubuntu 24.04, `us-central1-a`, no
+external IP — egress via Cloud NAT). Other unrelated projects may be running
+concurrently on the same VM, each in its own tmux session — don't assume exclusive use
+of the machine, and check for port conflicts (e.g. local Postgres, dev servers) before
+binding.
+
+Pre-installed at the VM level — don't reinstall or re-provision these:
+- Docker + `docker-compose-v2`, enabled
+- Node.js 22 LTS, Python 3.12, `gh` (already authenticated)
+- Playwright OS-level dependencies (`playwright install-deps` already run) — when
+  setting up Playwright for this repo, run `npx playwright install chromium firefox webkit`
+  **without** `--with-deps`; the system libraries are already present
+
+Not shared / per-checkout: Playwright's browser *binaries* are cached per project
+(tied to the `@playwright/test` version in this repo's `package.json`), so they still
+need to be installed once per checkout with the command above.
+````
