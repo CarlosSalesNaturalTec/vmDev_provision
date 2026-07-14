@@ -8,7 +8,7 @@
 $PROJECT_ID = "seu-projeto-id"          # <-- ajuste aqui
 $ZONE       = "us-central1-a"           
 $REGION     = "us-central1"
-$VM_NAME    = "claude-code-vmDev"
+$VM_NAME    = "claude-code-vm"
 
 # Define o projeto ativo
 gcloud config set project $PROJECT_ID
@@ -42,8 +42,14 @@ gcloud compute instances create $VM_NAME `
   --no-address `
   --metadata-from-file startup-script=startup.sh
 
+if ($LASTEXITCODE -ne 0) {
+    Write-Host ""
+    Write-Host "ERRO: a criacao da VM falhou (veja a mensagem acima). Corrija e rode o script novamente." -ForegroundColor Red
+    exit 1
+}
+
 Write-Host ""
-Write-Host "VM criada. Aguarde ~1-2 minutos para o startup-script terminar de instalar os pacotes."
+Write-Host "VM criada com sucesso." -ForegroundColor Green
 Write-Host "Para conectar:"
 Write-Host "  gcloud compute ssh $VM_NAME --zone=$ZONE --tunnel-through-iap"
 Write-Host ""
