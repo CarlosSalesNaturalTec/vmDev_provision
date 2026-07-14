@@ -16,16 +16,28 @@ Os dois arquivos são acoplados: `provision.ps1` injeta `startup.sh` na VM. Alte
 # Edite $PROJECT_ID em provision.ps1 primeiro (placeholder padrão "seu-projeto-id").
 ./provision.ps1
 
-# Conecte assim que o startup-script terminar (~1-2 min após a criação):
-gcloud compute ssh claude-code-vm --zone=us-central1-a --tunnel-through-iap
+# Conecte assim que o startup-script terminar (~1-10 min após a criação):
+gcloud compute ssh [sua_conta_google]@claude-code-vm --zone=us-central1-a --tunnel-through-iap
+
+Ex: gcloud compute ssh naturalbahia@claude-code-vm --zone=us-central1-a --tunnel-through-iap
 ```
 
-Não há etapa de build, lint ou teste. A verificação é operacional: execute o `provision.ps1`, depois conecte via SSH e confirme se as ferramentas foram instaladas. Verifique se o startup-script terminou sem erro com `cat /var/log/startup-script-progress.log` — deve terminar na linha `== [7/7] Concluido ==`.
+Não há etapa de build, lint ou teste. A verificação é operacional: execute o `provision.ps1`, depois conecte via SSH e confirme se as ferramentas foram instaladas. 
 
-# Autentique o GitHub CLI uma vez por VM (necessário para clonar repos privados)
-gh auth login
+Verifique se o startup-script terminou sem erro com `cat /var/log/startup-script-progress.log` — deve terminar na linha `== [7/7] Concluido ==`.
 
-## Preparando um novo repositório na VM
+## Autentique o GitHub CLI uma vez por VM (necessário para clonar repos privados)
+`gh auth login`
+* GitHub.com → HTTPS → autenticar via navegador.  
+* Copie a url fornecida, cole em um navegador e aprove
+
+## Criar pasta para projetos
+```
+# Direto na conexão SSH, sem nem precisar abrir tmux ainda
+mkdir -p ~/projetos
+```
+
+# Preparando um novo repositório na VM
 
 Depois de conectar via SSH, um fluxo típico para clonar um projeto e deixá-lo pronto para rodar (incluindo testes E2E com Playwright) é:
 
@@ -39,6 +51,7 @@ tmux ls                # lista as sessões ativas
 tmux kill-session -t dev  # encerra a sessão "dev"
 
 # Clone o repositório
+cd ~/projetos
 git clone https://github.com/<org>/<repo>.git
 cd <repo>
 
