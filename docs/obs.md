@@ -1,0 +1,2 @@
+* Definir IP público para a VM, não consigo acessar via Termux nem pelo App Google Cloud por causa da ausência deste IP público.
+* Executei uma seção com uso de playwright e openspec /opsx:apply e o uso de CPU não chegou em 45% diminuir capacidade da máquina para economizar custos nesta etapa de MVP, se necessário aumento depois
